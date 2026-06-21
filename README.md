@@ -4,6 +4,8 @@ A local desktop workbench for futures-market data operations, automated daily re
 
 This repository is a public demo version. It is designed for portfolio review, technical interviews, and early product conversations. It uses a small synthetic SQLite database and does not include private credentials, real customer lists, or production market data.
 
+Author: mach ([@McDl11](https://github.com/McDl11))
+
 ## What It Demonstrates
 
 - Desktop workbench built with Python and PySide6
@@ -139,6 +141,7 @@ Possible customization directions:
 - Demo data is synthetic and must not be used for trading decisions.
 - This project does not provide investment advice.
 - Real credentials should only be stored in local `.env` files, never committed to Git.
+- Public demo reports and desktop screens include an author mark: `mach (@McDl11)`.
 
 ## Recommended GitHub Repository Name
 
@@ -148,4 +151,6 @@ ai-futures-data-workbench-demo
 
 ## License
 
-No license has been selected yet. Add a license before distributing this as open source.
+Copyright (c) 2026 mach (@McDl11). All rights reserved.
+
+This public demo is provided for portfolio review and technical demonstration only. Commercial use, redistribution, resale, or publishing modified copies requires prior permission from the author.

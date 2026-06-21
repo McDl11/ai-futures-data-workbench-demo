@@ -30,6 +30,13 @@ class DesktopSystemCenterTests(unittest.TestCase):
         self.assertEqual(labels[:3], ["首页", "系统中心", "数据中心"])
         self.assertIsInstance(window.pages[1], SystemCenterPage)
 
+    def test_main_window_footer_shows_author_identity(self):
+        window = MainWindow()
+
+        labels = [label.text() for label in window.findChildren(QLabel)]
+
+        self.assertIn("Public Demo · mach (@McDl11)", labels)
+
     def test_system_center_collects_shared_status_sections(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

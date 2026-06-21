@@ -27,6 +27,8 @@ PROJECT_ROOT = find_project_root(APP_DIR)
 DB_PATH = PROJECT_ROOT / 'data' / 'futures.db'
 DEFAULT_HOST = '127.0.0.1'
 DEFAULT_PORT = 8765
+AUTHOR_IDENTITY = 'mach (@McDl11)'
+DEMO_BRANDING = f'Public Demo · {AUTHOR_IDENTITY}'
 PAGE_SIZE_OPTIONS = (50, 100, 200, 500)
 MAX_EXPORT_ROWS = 20000
 
@@ -244,7 +246,7 @@ tr:nth-child(even) td {{ background: #fbfcfe; }}
 <header class="top">
   <div>
     <div class="brand">期货数据库查看系统</div>
-    <div class="sub">只读查看 data/futures.db</div>
+    <div class="sub">只读查看 data/futures.db · {e(DEMO_BRANDING)}</div>
   </div>
   <div class="sub">{e(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}</div>
 </header>
