@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local environments
+.venv/
+venv/
+env/
+
+# Secrets and local configuration
+.env
+*.env
+!*.env.example
+services/report_system/recipients.csv
+!services/report_system/recipients.example.csv
+
+# Generated data and runtime output
+backups/
+runtime/
+services/data_downloader/futures_data/
+services/data_downloader/logs/
+services/report_system/logs/
+services/report_system/reports/
+apps/db_viewer/*.log
+
+# Local archives and databases
+*.db
+*.db-*
+*.sqlite
+*.zip
+
+# Public demo seed database
+!data/
+!data/futures.db

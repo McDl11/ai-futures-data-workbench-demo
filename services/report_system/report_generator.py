@@ -1,0 +1,563 @@
+from html import escape
+import base64
+import json
+import os
+from pathlib import Path
+import socket
+import struct
+import subprocess
+import tempfile
+import time
+import urllib.parse
+import urllib.request
+
+import pandas as pd
+
+from report_paths import report_type_label, safe_filename
+
+
+def fmt_num(value, digits=2):
+    if value is None or pd.isna(value):
+        return '-'
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if abs(value) >= 100000000:
+        return f'{value / 100000000:.2f}亿'
+    if abs(value) >= 10000:
+        return f'{value / 10000:.2f}万'
+    return f'{value:.{digits}f}'
+
+
+def fmt_pct(value):
+    if value is None or pd.isna(value):
+        return '-'
+    try:
+        return f'{float(value):.2f}%'
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def value_class(value):
+    if value is None or pd.isna(value):
+        return ''
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return ''
+    if value > 0:
+        return 'pos'
+    if value < 0:
+        return 'neg'
+    return 'flat'
+
+
+def display_trade_date(trade_date):
+    trade_date = str(trade_date)
+    if len(trade_date) == 8 and trade_date.isdigit():
+        return f'{trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:]}'
+    return trade_date
+
+
+def dataframe_to_html(df, columns, headers=None, pct_cols=None, num_cols=None, empty_text='暂无数据'):
+    if df is None or df.empty:
+        return f'<p class="empty">{escape(empty_text)}</p>'
+    headers = headers or columns
+    pct_cols = set(pct_cols or [])
+    num_cols = set(num_cols or [])
+    rows = ['<table><thead><tr>']
+    for h in headers:
+        rows.append(f'<th>{escape(str(h))}</th>')
+    rows.append('</tr></thead><tbody>')
+    for _, row in df.iterrows():
+        rows.append('<tr>')
+        for col in columns:
+            value = row.get(col)
+            if col in pct_cols:
+                text = fmt_pct(value)
+                cls = 'pos' if pd.notna(value) and float(value) > 0 else 'neg' if pd.notna(value) and float(value) < 0 else ''
+            elif col in num_cols:
+                text = fmt_num(value)
+                cls = ''
+            else:
+                text = '-' if value is None or pd.isna(value) else str(value)
+                cls = ''
+            rows.append(f'<td class="{cls}">{escape(text)}</td>')
+        rows.append('</tr>')
+    rows.append('</tbody></table>')
+    return ''.join(rows)
+
+
+def dataframe_to_markdown(df, columns, headers=None, pct_cols=None, num_cols=None, empty_text='暂无数据'):
+    if df is None or df.empty:
+        return f'{empty_text}\n'
+    headers = headers or columns
+    pct_cols = set(pct_cols or [])
+    num_cols = set(num_cols or [])
+    lines = []
+    lines.append('| ' + ' | '.join(headers) + ' |')
+    lines.append('| ' + ' | '.join(['---'] * len(headers)) + ' |')
+    for _, row in df.iterrows():
+        values = []
+        for col in columns:
+            value = row.get(col)
+            if col in pct_cols:
+                text = fmt_pct(value)
+            elif col in num_cols:
+                text = fmt_num(value)
+            else:
+                text = '-' if value is None or pd.isna(value) else str(value)
+            values.append(text)
+        lines.append('| ' + ' | '.join(values) + ' |')
+    return '\n'.join(lines) + '\n'
+
+
+def card_html(label, value, cls=''):
+    cls_attr = f' {cls}' if cls else ''
+    return f'<div class="metric"><div class="metric-label">{escape(str(label))}</div><div class="metric-value{cls_attr}">{escape(str(value))}</div></div>'
+
+
+def render_html(context):
+    overview = context['overview']
+    trade_date = context['trade_date']
+    sections = context['sections']
+    avg_pct_class = value_class(overview['avg_pct_chg'])
+    date_text = display_trade_date(trade_date)
+    report_label = report_type_label(context.get('report_type'))
+    metrics = ''.join([
+        card_html('主力合约数', overview['contracts']),
+        card_html('上涨', overview['up_count'], 'pos'),
+        card_html('下跌', overview['down_count'], 'neg'),
+        card_html('平盘', overview['flat_count'], 'flat'),
+        card_html('平均涨跌幅', fmt_pct(overview['avg_pct_chg']), avg_pct_class),
+        card_html('总持仓', fmt_num(overview['total_oi'], 0)),
+    ])
+    style = """
+    @page { margin: 10mm; }
+    * { box-sizing: border-box; }
+    body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 0; background: #f5f7fa; color: #202833; }
+    .page { max-width: 1160px; margin: 0 auto; padding: 24px; }
+    .cover { background: #fff; border: 1px solid #d9e2ec; border-radius: 8px; padding: 22px 24px; margin-bottom: 14px; }
+    .eyebrow { color: #1d4ed8; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+    h1 { font-size: 30px; line-height: 1.2; margin: 0 0 8px; letter-spacing: 0; color: #111827; }
+    h2 { font-size: 18px; margin: 24px 0 10px; padding-left: 10px; border-left: 4px solid #1d4ed8; color: #111827; }
+    h3 { font-size: 15px; margin: 0 0 8px; color: #344054; }
+    .meta { color: #667085; font-size: 13px; margin: 8px 0 12px; line-height: 1.7; }
+    .metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin: 14px 0 0; }
+    .metric { background: #f8fafc; border: 1px solid #e4eaf2; border-radius: 6px; padding: 12px; min-height: 72px; }
+    .metric-label { color: #667085; font-size: 12px; margin-bottom: 6px; }
+    .metric-value { font-size: 22px; line-height: 1.15; font-weight: 800; color: #202833; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e4eaf2; border-radius: 6px; overflow: hidden; }
+    th, td { padding: 7px 9px; border-bottom: 1px solid #edf1f6; font-size: 12px; line-height: 1.45; text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+    th { background: #f0f4f8; color: #344054; font-weight: 700; }
+    tbody tr:nth-child(even) { background: #fbfcfe; }
+    .pos { color: #b42318; font-weight: 800; }
+    .neg { color: #067647; font-weight: 800; }
+    .flat { color: #667085; font-weight: 800; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+    .panel { background: #fff; border: 1px solid #e4eaf2; border-radius: 8px; padding: 14px 16px; }
+    .empty { color: #667085; background: #fff; border: 1px solid #e4eaf2; padding: 12px; border-radius: 6px; }
+    .disclaimer { margin-top: 12px; background: #fff8eb; border: 1px solid #f7d394; padding: 9px 11px; border-radius: 6px; color: #8a4b0f; font-size: 12px; line-height: 1.7; }
+    .analysis { background: #fff; border: 1px solid #d9e2ec; border-radius: 8px; padding: 14px 16px; }
+    .analysis p { margin: 0 0 8px; line-height: 1.75; font-size: 13px; }
+    .analysis p:last-child { margin-bottom: 0; }
+    .analysis-item { color: #202833; }
+    .bullets { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .bullets li { background: #fff; border: 1px solid #e4eaf2; border-left: 3px solid #1d4ed8; border-radius: 6px; padding: 10px 12px; line-height: 1.65; font-size: 13px; }
+    @media (max-width: 900px) {
+      .page { padding: 14px; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      body { background: #fff; }
+      .page { max-width: none; padding: 0; }
+      .cover { padding: 16px 18px; }
+      h1 { font-size: 24px; }
+      h2 { break-after: avoid; page-break-after: avoid; }
+      table { break-inside: auto; page-break-inside: auto; }
+      tr, .metric, .analysis, .bullets li, .panel { break-inside: avoid; page-break-inside: avoid; }
+      th, td { font-size: 10px; padding: 5px 6px; }
+      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .grid { grid-template-columns: 1fr; }
+    }
+    """
+
+    return f"""<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>期货市场日报 {escape(trade_date)}</title>
+<style>{style}</style>
+</head>
+<body>
+<main class="page">
+<div class="cover">
+<div class="eyebrow">{escape(report_label)} | {escape(date_text)}</div>
+<h1>期货市场日报</h1>
+<p class="meta">统计口径：以主力合约/连续合约为主要观察对象，不等同于交易所全部挂牌合约统计。</p>
+<section class="metrics">{metrics}</section>
+<div class="disclaimer">本报告仅用于公开数据整理和市场复盘辅助，不构成任何投资建议；如需查看全部挂牌合约异常事件，可单独增加附录口径。</div>
+</div>
+{sections}
+</main>
+</body>
+</html>
+"""
+
+
+def render_markdown(context):
+    overview = context['overview']
+    date_text = display_trade_date(context['trade_date'])
+    report_label = report_type_label(context.get('report_type'))
+    lines = [
+        f"# 期货市场日报（{report_label}）- {date_text}",
+        '',
+        "统计口径：以主力合约/连续合约为主要观察对象，不等同于交易所全部挂牌合约统计。",
+        '',
+        "本报告仅用于公开数据整理和市场复盘辅助，不构成任何投资建议。",
+        '',
+        "## 市场概览",
+        '',
+        f"- 报告类型：{report_label}",
+        f"- 生成时间：{context.get('generated_at', '-')}",
+        f"- 主力合约数：{overview['contracts']}",
+        f"- 上涨/下跌/平盘：{overview['up_count']} / {overview['down_count']} / {overview['flat_count']}",
+        f"- 平均涨跌幅：{fmt_pct(overview['avg_pct_chg'])}",
+        f"- 总成交量：{fmt_num(overview['total_vol'], 0)}",
+        f"- 总持仓：{fmt_num(overview['total_oi'], 0)}",
+        '',
+        context['markdown_sections'],
+    ]
+    return '\n'.join(lines)
+
+
+def report_file_prefix(context):
+    trade_date = context['trade_date']
+    report_label = report_type_label(context.get('report_type'))
+    return safe_filename(f'期货{report_label}_数据{trade_date}')
+
+
+def write_report(context, output_dir: Path, file_prefix=None):
+    output_dir.mkdir(parents=True, exist_ok=True)
+    trade_date = context['trade_date']
+    prefix = safe_filename(file_prefix) if file_prefix else report_file_prefix(context)
+    html_path = output_dir / f'{prefix}.html'
+    md_path = output_dir / f'{prefix}.md'
+    pdf_path = output_dir / f'{prefix}.pdf'
+    previous_pdf_mtime = pdf_path.stat().st_mtime if pdf_path.exists() else None
+    html_path.write_text(render_html(context), encoding='utf-8')
+    md_path.write_text(render_markdown(context), encoding='utf-8')
+    created_pdf = create_pdf(html_path, pdf_path)
+    if created_pdf and pdf_path.exists():
+        current_pdf_mtime = pdf_path.stat().st_mtime
+        if previous_pdf_mtime is None or current_pdf_mtime > previous_pdf_mtime:
+            return html_path, md_path, pdf_path
+    pdf_path = output_dir / f'{prefix}.missing.pdf'
+    return html_path, md_path, pdf_path
+
+
+def browser_candidates():
+    return [
+        Path(r'C:\Program Files\Google\Chrome\Application\chrome.exe'),
+        Path(r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe'),
+        Path(r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'),
+        Path(r'C:\Program Files\Microsoft\Edge\Application\msedge.exe'),
+    ]
+
+
+def create_pdf(html_path: Path, pdf_path: Path):
+    browser = next((p for p in browser_candidates() if p.exists()), None)
+    if not browser:
+        return None
+
+    result = create_pdf_with_devtools(browser, html_path, pdf_path)
+    if result:
+        return result
+
+    return create_pdf_with_command_line(browser, html_path, pdf_path)
+
+
+def create_pdf_with_devtools(browser: Path, html_path: Path, pdf_path: Path):
+    tmp_path = pdf_path.with_name(f'{pdf_path.stem}.tmp{pdf_path.suffix}')
+    if not remove_existing_tmp_pdf(tmp_path, pdf_path):
+        return pdf_path if pdf_path.exists() else None
+
+    port = get_free_port()
+    with tempfile.TemporaryDirectory(prefix='futures-report-chrome-', ignore_cleanup_errors=True) as user_data_dir:
+        cmd = [
+            str(browser),
+            '--headless=new',
+            '--disable-gpu',
+            '--no-first-run',
+            '--disable-extensions',
+            '--disable-background-networking',
+            '--disable-sync',
+            '--hide-scrollbars',
+            f'--remote-debugging-port={port}',
+            f'--user-data-dir={user_data_dir}',
+            'about:blank',
+        ]
+        proc = None
+        try:
+            proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            ws_url = wait_for_page_websocket(port)
+            with DevToolsWebSocket(ws_url) as client:
+                client.call('Page.enable', timeout=10)
+                client.call('Emulation.setEmulatedMedia', {'media': 'print'}, timeout=10)
+                client.call('Page.navigate', {'url': html_path.resolve().as_uri()}, timeout=20)
+                wait_for_document_ready(client)
+                pdf = client.call(
+                    'Page.printToPDF',
+                    {
+                        'printBackground': True,
+                        'displayHeaderFooter': False,
+                        'preferCSSPageSize': True,
+                        'marginTop': 0.35,
+                        'marginBottom': 0.35,
+                        'marginLeft': 0.35,
+                        'marginRight': 0.35,
+                    },
+                    timeout=90,
+                )
+            tmp_path.write_bytes(base64.b64decode(pdf['data']))
+            tmp_path.replace(pdf_path)
+            return pdf_path if pdf_path.exists() else None
+        except Exception:
+            return None
+        finally:
+            stop_process(proc)
+
+
+def create_pdf_with_command_line(browser: Path, html_path: Path, pdf_path: Path):
+    tmp_path = pdf_path.with_name(f'{pdf_path.stem}.tmp{pdf_path.suffix}')
+    if not remove_existing_tmp_pdf(tmp_path, pdf_path):
+        return pdf_path if pdf_path.exists() else None
+
+    cmd = [
+        str(browser),
+        '--headless=new',
+        '--disable-gpu',
+        '--no-first-run',
+        '--disable-extensions',
+        '--no-pdf-header-footer',
+        '--print-to-pdf-no-header',
+        f'--print-to-pdf={tmp_path}',
+        html_path.resolve().as_uri(),
+    ]
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=90)
+        if tmp_path.exists():
+            try:
+                tmp_path.replace(pdf_path)
+            except OSError:
+                return tmp_path
+    except Exception:
+        return None
+    return pdf_path if pdf_path.exists() else None
+
+
+def remove_existing_tmp_pdf(tmp_path: Path, pdf_path: Path):
+    if not tmp_path.exists():
+        return True
+    try:
+        tmp_path.unlink()
+        return True
+    except OSError:
+        return False
+
+
+def get_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(('127.0.0.1', 0))
+        return sock.getsockname()[1]
+
+
+def wait_for_page_websocket(port, timeout=20):
+    deadline = time.time() + timeout
+    url = f'http://127.0.0.1:{port}/json/list'
+    last_error = None
+    while time.time() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=1) as resp:
+                targets = json.loads(resp.read().decode('utf-8'))
+            for target in targets:
+                if target.get('type') == 'page' and target.get('webSocketDebuggerUrl'):
+                    return target['webSocketDebuggerUrl']
+        except Exception as exc:
+            last_error = exc
+        time.sleep(0.2)
+    raise RuntimeError(f'Chrome DevTools page target was not ready: {last_error}')
+
+
+def wait_for_document_ready(client, timeout=30):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        result = client.call(
+            'Runtime.evaluate',
+            {'expression': 'document.readyState', 'returnByValue': True},
+            timeout=5,
+        )
+        if result.get('result', {}).get('value') == 'complete':
+            client.call(
+                'Runtime.evaluate',
+                {
+                    'expression': 'document.fonts ? document.fonts.ready.then(() => true) : Promise.resolve(true)',
+                    'awaitPromise': True,
+                    'returnByValue': True,
+                },
+                timeout=10,
+            )
+            return
+        time.sleep(0.2)
+    raise TimeoutError('HTML document was not ready for PDF printing')
+
+
+def stop_process(proc):
+    if proc is None or proc.poll() is not None:
+        return
+    proc.terminate()
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait(timeout=5)
+
+
+class DevToolsWebSocket:
+    def __init__(self, ws_url, timeout=30):
+        self.ws_url = ws_url
+        self.timeout = timeout
+        self.sock = None
+        self.next_id = 0
+
+    def __enter__(self):
+        parsed = urllib.parse.urlparse(self.ws_url)
+        if parsed.scheme != 'ws':
+            raise ValueError(f'Unsupported DevTools websocket URL: {self.ws_url}')
+        host = parsed.hostname or '127.0.0.1'
+        port = parsed.port or 80
+        path = parsed.path or '/'
+        if parsed.query:
+            path = f'{path}?{parsed.query}'
+
+        sock = socket.create_connection((host, port), timeout=self.timeout)
+        sock.settimeout(self.timeout)
+        key = base64.b64encode(os.urandom(16)).decode('ascii')
+        request = (
+            f'GET {path} HTTP/1.1\r\n'
+            f'Host: {host}:{port}\r\n'
+            'Upgrade: websocket\r\n'
+            'Connection: Upgrade\r\n'
+            f'Sec-WebSocket-Key: {key}\r\n'
+            'Sec-WebSocket-Version: 13\r\n'
+            '\r\n'
+        )
+        sock.sendall(request.encode('ascii'))
+        response = b''
+        while b'\r\n\r\n' not in response:
+            chunk = sock.recv(4096)
+            if not chunk:
+                break
+            response += chunk
+        if not response.startswith(b'HTTP/1.1 101'):
+            sock.close()
+            raise RuntimeError('Chrome DevTools websocket handshake failed')
+        self.sock = sock
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if self.sock is not None:
+            try:
+                self.send_frame(0x8, b'')
+            except Exception:
+                pass
+            self.sock.close()
+            self.sock = None
+
+    def call(self, method, params=None, timeout=30):
+        self.next_id += 1
+        message_id = self.next_id
+        self.send_json({'id': message_id, 'method': method, 'params': params or {}})
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            self.sock.settimeout(max(0.2, min(5, deadline - time.time())))
+            try:
+                message = json.loads(self.recv_message())
+            except socket.timeout:
+                continue
+            if message.get('id') != message_id:
+                continue
+            if 'error' in message:
+                raise RuntimeError(message['error'])
+            return message.get('result', {})
+        raise TimeoutError(f'Chrome DevTools command timed out: {method}')
+
+    def send_json(self, value):
+        self.send_frame(0x1, json.dumps(value, separators=(',', ':')).encode('utf-8'))
+
+    def recv_message(self):
+        chunks = []
+        message_opcode = None
+        while True:
+            fin, opcode, payload = self.recv_frame()
+            if opcode == 0x8:
+                raise RuntimeError('Chrome DevTools websocket closed')
+            if opcode == 0x9:
+                self.send_frame(0xA, payload)
+                continue
+            if opcode == 0xA:
+                continue
+            if opcode in (0x1, 0x2):
+                message_opcode = opcode
+                chunks.append(payload)
+            elif opcode == 0x0:
+                chunks.append(payload)
+            else:
+                continue
+            if fin:
+                data = b''.join(chunks)
+                if message_opcode == 0x1:
+                    return data.decode('utf-8')
+                return data
+
+    def recv_frame(self):
+        header = self.read_exact(2)
+        first, second = header
+        fin = bool(first & 0x80)
+        opcode = first & 0x0F
+        masked = bool(second & 0x80)
+        length = second & 0x7F
+        if length == 126:
+            length = struct.unpack('!H', self.read_exact(2))[0]
+        elif length == 127:
+            length = struct.unpack('!Q', self.read_exact(8))[0]
+        mask = self.read_exact(4) if masked else b''
+        payload = self.read_exact(length) if length else b''
+        if masked:
+            payload = bytes(byte ^ mask[index % 4] for index, byte in enumerate(payload))
+        return fin, opcode, payload
+
+    def send_frame(self, opcode, payload):
+        first = 0x80 | opcode
+        length = len(payload)
+        if length < 126:
+            header = struct.pack('!BB', first, 0x80 | length)
+        elif length < 65536:
+            header = struct.pack('!BBH', first, 0x80 | 126, length)
+        else:
+            header = struct.pack('!BBQ', first, 0x80 | 127, length)
+        mask = os.urandom(4)
+        masked = bytes(byte ^ mask[index % 4] for index, byte in enumerate(payload))
+        self.sock.sendall(header + mask + masked)
+
+    def read_exact(self, size):
+        data = b''
+        while len(data) < size:
+            chunk = self.sock.recv(size - len(data))
+            if not chunk:
+                raise RuntimeError('Chrome DevTools websocket disconnected')
+            data += chunk
+        return data

@@ -1,0 +1,2 @@
+email,name,enabled,remark
+demo-recipient@example.com,Demo Recipient,TRUE,Demo dry-run recipient
