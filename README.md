@@ -29,6 +29,40 @@ Open desktop app -> inspect sample data -> generate demo report -> review dry-ru
 
 The sample database includes a few synthetic trading days and several representative futures products, such as copper, rebar, gold, crude oil, soybean meal, PTA, and stock-index futures.
 
+## Screenshots
+
+### Desktop Dashboard
+
+![Desktop dashboard](docs/screenshots/01-desktop-home.png)
+
+### System Center
+
+![System center](docs/screenshots/02-desktop-system-center.png)
+
+### Data Center
+
+![Data center](docs/screenshots/03-desktop-data-center.png)
+
+### Report Center
+
+![Report center](docs/screenshots/04-desktop-report-center.png)
+
+### Mail Center
+
+![Mail center](docs/screenshots/05-desktop-mail-center.png)
+
+### Database Viewer Overview
+
+![Database viewer overview](docs/screenshots/06-db-viewer-overview.png)
+
+### Data Table Browser
+
+![Data table browser](docs/screenshots/07-db-viewer-data-table.png)
+
+### Generated Market Report
+
+![Generated market report](docs/screenshots/08-report-html.png)
+
 ## Quick Start
 
 Install dependencies and create local demo config files:

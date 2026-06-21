@@ -1,5 +1,7 @@
 # AI Futures Data Workbench Demo
 
+Language: English | [中文说明](NOTICE.zh-CN.md)
+
 Copyright (c) 2026 mach (@McDl11).
 
 GitHub: https://github.com/McDl11

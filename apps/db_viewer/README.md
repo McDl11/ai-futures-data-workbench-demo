@@ -1,5 +1,7 @@
 # Database Viewer
 
+Language: English | [中文说明](README.zh-CN.md)
+
 A local read-only web viewer for the demo SQLite database at `data/futures.db`.
 
 ## Start

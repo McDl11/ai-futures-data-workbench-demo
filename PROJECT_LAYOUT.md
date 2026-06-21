@@ -1,5 +1,7 @@
 # Project Layout
 
+Language: English | [中文说明](PROJECT_LAYOUT.zh-CN.md)
+
 This demo keeps the same high-level structure as the private project while replacing private runtime state with safe public sample files.
 
 ## Public Source Directories
