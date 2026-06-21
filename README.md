@@ -1,5 +1,7 @@
 # AI Futures Data Workbench Demo
 
+Language: [English](README.md) | [中文说明](README.zh-CN.md)
+
 A local desktop workbench for futures-market data operations, automated daily reports, email dry-runs, database inspection, and operational health checks.
 
 This repository is a public demo version. It is designed for portfolio review, technical interviews, and early product conversations. It uses a small synthetic SQLite database and does not include private credentials, real customer lists, or production market data.
