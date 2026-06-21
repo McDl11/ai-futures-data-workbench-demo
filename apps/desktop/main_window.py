@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
 
-        footer = QLabel("Public Demo · mach (@McDl11)")
+        footer = QLabel("Public Demo · Ma Chao / mach")
         footer.setObjectName("SidebarFooter")
         layout.addWidget(footer)
 

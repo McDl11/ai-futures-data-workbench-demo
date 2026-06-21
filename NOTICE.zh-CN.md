@@ -2,9 +2,10 @@
 
 语言: [English](NOTICE.md) | 中文说明
 
-版权所有 (c) 2026 mach (@McDl11)。
+版权所有 (c) 2026 马超 / mach。
 
 GitHub: https://github.com/McDl11
+Gitee: https://gitee.com/mc930129
 
 本公开 Demo 仅用于作品集展示、技术演示和早期产品沟通。未经作者事先许可，不允许商业使用、二次分发、转售或发布修改版本。
 

@@ -35,7 +35,7 @@ class DesktopSystemCenterTests(unittest.TestCase):
 
         labels = [label.text() for label in window.findChildren(QLabel)]
 
-        self.assertIn("Public Demo · mach (@McDl11)", labels)
+        self.assertIn("Public Demo · Ma Chao / mach", labels)
 
     def test_system_center_collects_shared_status_sections(self):
         with tempfile.TemporaryDirectory() as temp_dir:

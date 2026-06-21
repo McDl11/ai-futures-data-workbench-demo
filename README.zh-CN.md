@@ -6,7 +6,10 @@
 
 本仓库是公开演示版本，适合用于作品集展示、技术面试、项目沟通和早期商业验证。Demo 使用小型模拟 SQLite 数据库，不包含真实账号、真实客户名单、生产行情库或任何私密凭证。
 
-作者: mach ([@McDl11](https://github.com/McDl11))
+作者: 马超 / mach
+
+- GitHub: [@McDl11](https://github.com/McDl11)
+- Gitee: [@mc930129](https://gitee.com/mc930129)
 
 ## 项目截图
 
@@ -179,7 +182,7 @@ tests/                  安全和流程测试
 - Demo 数据是模拟数据，不能用于交易决策。
 - 本项目不提供投资建议。
 - 真实密钥只能保存在本地 `.env` 文件中，不应提交到 Git。
-- 桌面界面、数据库查看系统和报告中保留了作者标识: `mach (@McDl11)`。
+- 桌面界面、数据库查看系统和报告中保留了作者标识: `马超 / mach`。
 
 ## 适合怎么展示
 
@@ -207,6 +210,6 @@ tests/                  安全和流程测试
 
 ## 许可证
 
-Copyright (c) 2026 mach (@McDl11). All rights reserved.
+Copyright (c) 2026 马超 / mach. All rights reserved.
 
 本公开 Demo 仅用于作品展示和技术演示。未经作者许可，不允许商业使用、二次分发、转售或发布修改版本。
