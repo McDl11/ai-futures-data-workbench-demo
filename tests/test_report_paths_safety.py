@@ -22,7 +22,7 @@ class ReportPathSafetyTests(unittest.TestCase):
             self.assertEqual(md_path.parent, reports_dir / "20260618" / "white")
             self.assertEqual(pdf_path.parent, reports_dir / "20260618" / "white")
             self.assertIn("20260618", html_path.name)
-            self.assertIn("白盘", html_path.name)
+            self.assertIn("white", html_path.name)
 
     def test_latest_report_bundle_prefers_requested_type_over_newer_other_type(self):
         with tempfile.TemporaryDirectory() as temp_dir:

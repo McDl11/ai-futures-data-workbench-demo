@@ -8,6 +8,7 @@ from desktop.data_center import (
     CoreTableSpec,
     CoreTableStatus,
     collect_core_table_statuses,
+    database_detail,
     find_recent_gap_range,
     plan_data_update_range,
     run_data_gap_repair,
@@ -18,6 +19,18 @@ from desktop.task_records import load_task_run_history
 
 
 class DesktopDataCenterTests(unittest.TestCase):
+    def test_database_detail_can_show_project_relative_path(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            db_path = root / "data" / "futures.db"
+            db_path.parent.mkdir()
+            db_path.write_bytes(b"abc")
+
+            detail = database_detail(db_path, root)
+
+            self.assertIn(str(Path("data") / "futures.db"), detail)
+            self.assertNotIn(str(root), detail)
+
     def test_collect_core_table_status_reads_rows_latest_date_and_gaps(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = Path(temp_dir) / "futures.db"

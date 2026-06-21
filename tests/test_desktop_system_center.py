@@ -59,6 +59,8 @@ class DesktopSystemCenterTests(unittest.TestCase):
             self.assertIn("配置与依赖文件状态", labels)
             self.assertIn("报告系统 .env", labels)
             self.assertIn("下载器 .env", labels)
+            self.assertIn(str(Path("data") / "futures.db") + " · 2 B", labels)
+            self.assertNotIn(str(root / "data" / "futures.db"), labels)
 
     def test_other_centers_no_longer_show_shared_status_sections(self):
         snapshot = collect_workspace_snapshot(Path("D:/AI期货数据工作台"))

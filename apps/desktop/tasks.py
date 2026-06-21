@@ -107,12 +107,12 @@ def task_catalog(project_root: Path) -> list[TaskDefinition]:
         ),
         TaskDefinition(
             id="auto_report_daemon_send",
-            name="24小时守护发送",
+            name="24小时守护演练",
             group="守护进程",
             working_dir=report_dir,
             script_name="auto_report_daemon.py",
-            args=["--send"],
-            description="启动 24 小时守护脚本，到点真实发送邮件。",
+            args=[],
+            description="启动 24 小时守护脚本，到点写入 dry-run 记录，不真实发送邮件。",
             background=True,
             can_stop=True,
         ),
@@ -161,7 +161,7 @@ def start_background_task(
     pid, _started_at = _read_pid_record(project_root, task_id)
     if pid is not None and process_checker(pid):
         log_path = _task_log_path(project_root, task_id)
-        return ActionResult(True, f"{task.name} 正在运行。", f"PID: {pid}\n日志: {log_path}")
+        return ActionResult(True, f"{task.name} 正在运行。", f"PID: {pid}\n日志: {_display_path(log_path, project_root)}")
 
     started = _now_text()
     try:
@@ -172,7 +172,7 @@ def start_background_task(
         record_task_result(project_root, task.id, task.name, "启动失败", str(exc), "", started_at=started)
         return ActionResult(False, f"启动失败：{exc}")
 
-    output = f"PID: {result.pid}\n日志: {result.log_path}"
+    output = f"PID: {result.pid}\n日志: {_display_path(result.log_path, project_root)}"
     record_task_result(project_root, task.id, task.name, "已启动", "后台任务已启动。", output, started_at=started)
     return ActionResult(True, "后台任务已启动。", output)
 
@@ -351,6 +351,13 @@ def _pid_path(project_root: Path, task_id: str) -> Path:
 
 def _task_log_path(project_root: Path, task_id: str) -> Path:
     return _runtime_dir(project_root) / f"{task_id}.log"
+
+
+def _display_path(path: Path, project_root: Path) -> str:
+    try:
+        return str(Path(path).relative_to(Path(project_root)))
+    except ValueError:
+        return str(path)
 
 
 def _read_pid_record(project_root: Path, task_id: str) -> tuple[int | None, str]:

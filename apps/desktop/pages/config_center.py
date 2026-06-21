@@ -163,7 +163,7 @@ class ConfigCenterPage(ScrollPage):
         form.addRow("Tushare Token", self.tushare_token_input)
 
         self.tushare_http_url_input = QLineEdit(self.config.tushare_http_url)
-        self.tushare_http_url_input.setPlaceholderText("可留空；使用中转时填 http://jiaoch.site")
+        self.tushare_http_url_input.setPlaceholderText("可留空；使用自定义 Tushare 接口时填写")
         form.addRow("Tushare HTTP 地址", self.tushare_http_url_input)
 
         section.add(self._wrap_form(form))

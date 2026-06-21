@@ -25,13 +25,14 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 load_dotenv(BASE_DIR / '.env')
 TOKEN = os.getenv('TUSHARE_TOKEN')
-HTTP_URL = os.getenv('TUSHARE_HTTP_URL', 'http://jiaoch.site')
+HTTP_URL = os.getenv('TUSHARE_HTTP_URL', '').strip()
 
 import tushare as ts
 
 pro = ts.pro_api(TOKEN)
 pro._DataApi__token = TOKEN
-pro._DataApi__http_url = HTTP_URL
+if HTTP_URL:
+    pro._DataApi__http_url = HTTP_URL
 
 
 class RateLimiter:

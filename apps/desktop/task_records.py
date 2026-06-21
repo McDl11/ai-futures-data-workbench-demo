@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Callable
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
@@ -25,7 +26,7 @@ def record_task_run(
     db_path = _db_path(project_root)
     try:
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(db_path) as conn:
+        with closing(sqlite3.connect(db_path)) as conn:
             _ensure_schema(conn)
             conn.execute(
                 """
@@ -89,7 +90,7 @@ def load_task_run_history(project_root: Path, limit: int = 100) -> list[dict[str
     if not db_path.exists():
         return []
     try:
-        with sqlite3.connect(db_path) as conn:
+        with closing(sqlite3.connect(db_path)) as conn:
             _ensure_schema(conn)
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
@@ -122,7 +123,7 @@ def _record_task_result(
     db_path = _db_path(project_root)
     try:
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(db_path) as conn:
+        with closing(sqlite3.connect(db_path)) as conn:
             _ensure_schema(conn)
             conn.execute(
                 """

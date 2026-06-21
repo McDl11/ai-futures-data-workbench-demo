@@ -216,7 +216,6 @@ def build_send_selected_args(
         report_type,
         "--date",
         trade_date,
-        "--send",
         "--force",
         "--to",
         ",".join(address.strip() for address in recipients if address.strip()),
@@ -251,7 +250,7 @@ def send_selected_report(
     return run_and_record(
         project_root,
         task_type="mail_send",
-        task_name="发送给选中收件人",
+        task_name="发送演练",
         target_date=trade_date,
         detail=f"{report_type} -> {len(recipients)} 人",
         fn=lambda: runner(
@@ -289,7 +288,6 @@ def build_resend_args(record: MailSendRecord) -> list[str]:
         record.report_type,
         "--date",
         record.trade_date,
-        "--send",
         "--force",
         "--resend",
     ]
@@ -313,7 +311,7 @@ def resend_mail_record(project_root: Path, record: MailSendRecord, runner: Runne
     return run_and_record(
         project_root,
         task_type="mail_send",
-        task_name="重发邮件",
+        task_name="重发演练",
         target_date=record.trade_date,
         detail=f"{record.report_type} -> {record.target}",
         fn=lambda: runner(

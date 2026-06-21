@@ -93,7 +93,7 @@ class MailCenterPage(ScrollPage):
         recipients_section.add(self.recipients_table)
         top_layout.addWidget(recipients_section)
 
-        send_section = Section("发送邮件", "先选中一个或多个收件人，再选择报告日期和附件内容。")
+        send_section = Section("发送演练", "先选中一个或多个收件人，再选择报告日期和附件内容；默认 dry-run，不真实发送。")
         send_section.add(self._build_send_controls(snapshot))
         top_layout.addWidget(send_section)
 
@@ -212,7 +212,7 @@ class MailCenterPage(ScrollPage):
         layout.addWidget(self.html_checkbox)
         layout.addWidget(self.md_checkbox)
 
-        send_button = QPushButton("发送给选中收件人")
+        send_button = QPushButton("演练发送给选中收件人")
         send_button.setObjectName("PrimaryButton")
         send_button.clicked.connect(self.confirm_and_send_selected_recipients)
         layout.addWidget(send_button)
@@ -403,14 +403,14 @@ class MailCenterPage(ScrollPage):
 
         answer = QMessageBox.question(
             self,
-            "确认发送",
+            "确认发送演练",
             (
                 f"发件邮箱：{self.account.sender or '未配置'}\n"
                 f"收件人：{', '.join(addresses)}\n"
                 f"报告日期：{trade_date}\n"
                 f"报告类型：{self._report_type_text(report_type)}\n"
                 f"附件内容：{', '.join(attachments)}\n\n"
-                "确认后会真实发送邮件。"
+                "确认后会写入 dry-run 发送记录，不会真实发送邮件。"
             ),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
@@ -419,7 +419,7 @@ class MailCenterPage(ScrollPage):
             self.show_result(ActionResult(False, "已取消发送。"))
             return
         self.run_background(
-            f"正在发送邮件：{trade_date} -> {len(addresses)} 个收件人，请稍候...",
+            f"正在执行发送演练：{trade_date} -> {len(addresses)} 个收件人，请稍候...",
             lambda: send_selected_report(
                 self.snapshot.project_root,
                 trade_date=trade_date,
@@ -438,11 +438,11 @@ class MailCenterPage(ScrollPage):
             return
         answer = QMessageBox.question(
             self,
-            "确认重发",
+            "确认重发演练",
             (
                 f"确认重发 {record.trade_date} {self._report_type_text(record.report_type)}？\n\n"
                 f"收件人：{record.target}\n\n"
-                "这会真实发送邮件。"
+                "这会写入 dry-run 发送记录，不会真实发送邮件。"
             ),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
@@ -451,7 +451,7 @@ class MailCenterPage(ScrollPage):
             self.show_result(ActionResult(False, "已取消重发。"))
             return
         self.run_background(
-            f"正在重发邮件：{record.trade_date} {record.target}，请稍候...",
+            f"正在执行重发演练：{record.trade_date} {record.target}，请稍候...",
             lambda: resend_mail_record(self.snapshot.project_root, record),
         )
 
@@ -491,7 +491,7 @@ class MailCenterPage(ScrollPage):
     def _status_text(self, status: str) -> str:
         return {
             "sent": "已发送",
-            "dry_run": "演练",
+            "dry_run": "dry-run",
             "skipped_duplicate": "已跳过重复",
             "failed": "失败",
             "partial_failed": "部分失败",

@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
 
-        footer = QLabel("AI Futures Data Workbench · Demo")
+        footer = QLabel("Public Demo")
         footer.setObjectName("SidebarFooter")
         layout.addWidget(footer)
 

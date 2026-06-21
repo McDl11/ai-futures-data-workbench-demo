@@ -1,5 +1,5 @@
 """
-Tushare 期货数据下载器（通过中转 http://jiaoch.site）
+Tushare 期货数据下载器
 覆盖 11 个期货接口，排除实时分钟线和历史分钟线
 账号积分：10,000，所有接口均可调用
 
@@ -24,14 +24,15 @@ from collections import deque
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / '.env')
 TOKEN = os.getenv('TUSHARE_TOKEN')
-HTTP_URL = os.getenv('TUSHARE_HTTP_URL', 'http://jiaoch.site')
+HTTP_URL = os.getenv('TUSHARE_HTTP_URL', '').strip()
 
 import tushare as ts
 
-# 初始化 pro（关键！必须设置中转地址）
+# 初始化 pro；如需自定义 HTTP 地址，可在 .env 中配置 TUSHARE_HTTP_URL。
 pro = ts.pro_api(TOKEN)
 pro._DataApi__token = TOKEN
-pro._DataApi__http_url = HTTP_URL
+if HTTP_URL:
+    pro._DataApi__http_url = HTTP_URL
 
 # 输出根目录
 OUTPUT = BASE_DIR / 'futures_data'
@@ -425,7 +426,7 @@ def main():
 
     log('=' * 60)
     log('Tushare Futures Data Downloader')
-    log(f'   URL:        {HTTP_URL}')
+    log(f'   URL:        {HTTP_URL or "Tushare default"}')
     log(f'   Output:     {OUTPUT.resolve()}')
     log(f'   Range:      {START_DATE} ~ {END_DATE}')
     log(f'   Rate Limit: {MAX_CALLS_PER_MINUTE} calls/min ({MIN_INTERVAL:.1f}s interval)')

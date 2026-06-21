@@ -146,7 +146,7 @@ class Section(QFrame):
         self.content_layout.addWidget(widget)
 
 
-def status_row(label: str, status: FileStatus) -> QWidget:
+def status_row(label: str, status: FileStatus, root: Path | None = None) -> QWidget:
     row = QWidget()
     layout = QHBoxLayout(row)
     layout.setContentsMargins(0, 0, 0, 0)
@@ -162,7 +162,12 @@ def status_row(label: str, status: FileStatus) -> QWidget:
     state.setProperty("state", "ok" if status.exists else "warning")
     layout.addWidget(state)
 
-    detail = QLabel(status.detail or str(status.path))
+    detail_text = status.detail or str(status.path)
+    if root is not None and Path(status.path).is_absolute():
+        suffix = f" · {format_size(status.size_bytes)}" if status.exists and status.path.is_file() else ""
+        detail_text = f"{short_path(status.path, root)}{suffix}"
+
+    detail = QLabel(detail_text)
     detail.setObjectName("MutedText")
     detail.setTextInteractionFlags(Qt.TextSelectableByMouse)
     layout.addWidget(detail, 1)

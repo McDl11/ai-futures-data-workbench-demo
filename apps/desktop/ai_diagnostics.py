@@ -186,7 +186,7 @@ def _daemon_diagnostic(project_root: Path) -> tuple[str, list[str]]:
                 "24小时守护未启动",
                 "没有找到守护进程 PID 记录。",
                 "auto_report_daemon_send.pid 不存在",
-                "在任务中心启动 24 小时守护发送。",
+                "在任务中心启动 24 小时守护演练。",
             ),
             [source],
         )
@@ -197,7 +197,7 @@ def _daemon_diagnostic(project_root: Path) -> tuple[str, list[str]]:
                 "24小时守护异常退出",
                 "找到 PID 记录，但进程已经不在运行。",
                 f"PID={item.pid}, status={item.status}",
-                "先停止守护发送，再重新启动 24 小时守护发送，并查看守护日志。",
+                "先停止守护演练，再重新启动 24 小时守护演练，并查看守护日志。",
             ),
             [source],
         )

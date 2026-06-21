@@ -308,7 +308,7 @@ class DesktopMailCenterTests(unittest.TestCase):
         args = build_resend_args(record)
 
         self.assertEqual(args[:5], ["send_report_email.py", "--report-type", "white", "--date", "20260618"])
-        self.assertIn("--send", args)
+        self.assertNotIn("--send", args)
         self.assertIn("--force", args)
         self.assertIn("--resend", args)
         self.assertIn("--to", args)
@@ -327,6 +327,7 @@ class DesktopMailCenterTests(unittest.TestCase):
         )
 
         self.assertEqual(args[:5], ["send_report_email.py", "--report-type", "white", "--date", "20260618"])
+        self.assertNotIn("--send", args)
         self.assertIn("--to", args)
         self.assertIn("alice@example.com,bob@example.com", args)
         self.assertIn("--attachments", args)
@@ -356,6 +357,7 @@ class DesktopMailCenterTests(unittest.TestCase):
 
         self.assertTrue(result.ok)
         self.assertEqual(captured["script"], "send_report_email.py")
+        self.assertNotIn("--send", captured["args"])
         self.assertIn("--attachments", captured["args"])
         self.assertIn("pdf", captured["args"])
         self.assertEqual(captured["env"]["PYTHONIOENCODING"], "utf-8")
@@ -437,6 +439,7 @@ class DesktopMailCenterTests(unittest.TestCase):
         self.assertTrue(result.ok)
         self.assertEqual(captured["working_dir"], Path("D:/AI期货数据工作台") / "services" / "report_system")
         self.assertEqual(captured["script"], "send_report_email.py")
+        self.assertNotIn("--send", captured["args"])
         self.assertIn("--resend", captured["args"])
         self.assertEqual(captured["env"]["PYTHONIOENCODING"], "utf-8")
 
@@ -468,7 +471,7 @@ class DesktopMailCenterTests(unittest.TestCase):
             self.assertTrue(result.ok)
             rows = load_task_run_history(root)
             self.assertEqual(rows[0]["task_type"], "mail_send")
-            self.assertIn("重发", rows[0]["task_name"])
+            self.assertEqual(rows[0]["task_name"], "重发演练")
 
     def test_mail_center_send_controls_only_offer_white_report(self):
         with tempfile.TemporaryDirectory() as temp_dir:

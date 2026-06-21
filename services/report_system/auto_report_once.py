@@ -5,6 +5,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+from contextlib import closing
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -86,7 +87,7 @@ def refresh_trade_calendar(logger, start_date, end_date):
         logger.warning(f'Trade calendar refresh returned no rows: {start_date}~{end_date}')
         return 0
 
-    with sqlite3.connect(DB_PATH) as conn:
+    with closing(sqlite3.connect(DB_PATH)) as conn:
         conn.execute(
             """
             create table if not exists trade_cal (

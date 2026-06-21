@@ -32,13 +32,14 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / '.env')
 
 TOKEN = os.getenv('TUSHARE_TOKEN')
-HTTP_URL = os.getenv('TUSHARE_HTTP_URL', 'http://jiaoch.site')
+HTTP_URL = os.getenv('TUSHARE_HTTP_URL', '').strip()
 
 # 初始化 tushare pro（模块级，方便跨模块调用）
 import tushare as ts
 pro = ts.pro_api(TOKEN)
 pro._DataApi__token = TOKEN
-pro._DataApi__http_url = HTTP_URL
+if HTTP_URL:
+    pro._DataApi__http_url = HTTP_URL
 
 # 输出根目录 & 日志目录
 OUTPUT = BASE_DIR / 'futures_data'
@@ -666,7 +667,7 @@ def run_download(start_date=None, end_date=None):
 
     log.info('=' * 60)
     log.info('  Tushare 期货数据自动下载引擎')
-    log.info(f'  中转地址:   {HTTP_URL}')
+    log.info(f'  HTTP 地址:  {HTTP_URL or "Tushare 默认"}')
     log.info(f'  数据范围:   {START_DATE} ~ {END_DATE}')
     log.info(f'  速率限制:   {MAX_CALLS_PER_MINUTE} 次/分钟')
     log.info(f'  输出目录:   {OUTPUT.resolve()}')

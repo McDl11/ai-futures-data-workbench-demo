@@ -29,7 +29,7 @@ from desktop.tasks import (
     stop_background_task,
     task_catalog,
 )
-from desktop.widgets import Section, make_title
+from desktop.widgets import Section, make_title, short_path
 from desktop.workers import BackgroundTask
 
 
@@ -58,7 +58,7 @@ class TaskCenterPage(ScrollPage):
         self.layout.addWidget(
             make_title(
                 "任务中心",
-                "运行临时脚本、管理 24 小时守护发送进程，并查看执行输出。",
+                "运行临时脚本、管理 24 小时守护演练进程，并查看执行输出。",
             )
         )
 
@@ -79,7 +79,7 @@ class TaskCenterPage(ScrollPage):
         tasks.add(self._build_task_actions())
         top_layout.addWidget(tasks)
 
-        processes = Section("任务进程", "24 小时守护发送启动后会独立运行，关闭桌面 UI 后仍会继续工作。")
+        processes = Section("任务进程", "24 小时守护演练启动后会独立运行，关闭桌面 UI 后仍会继续工作。")
         self.process_table = self._build_process_table(self.processes)
         processes.add(self.process_table)
         processes.add(self._build_process_actions())
@@ -90,7 +90,7 @@ class TaskCenterPage(ScrollPage):
         self.output_box = QTextEdit()
         self.output_box.setReadOnly(True)
         self.output_box.setMinimumHeight(140)
-        self.output_box.setPlaceholderText("运行一次、启动守护发送、停止守护发送的结果会显示在这里。")
+        self.output_box.setPlaceholderText("运行一次、启动守护演练、停止守护演练的结果会显示在这里。")
         if self.last_output:
             self.output_box.setPlainText(self.last_output)
         output.add(self.output_box)
@@ -161,7 +161,7 @@ class TaskCenterPage(ScrollPage):
                 str(item.pid) if item.pid is not None else "-",
                 item.started_at or "-",
                 item.script_name,
-                str(item.log_path) if item.log_path is not None else "-",
+                short_path(item.log_path, self.snapshot.project_root) if item.log_path is not None else "-",
                 item.description,
             ]
             for col, value in enumerate(values):
@@ -205,12 +205,12 @@ class TaskCenterPage(ScrollPage):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        start_button = QPushButton("启动守护发送")
+        start_button = QPushButton("启动守护演练")
         start_button.setObjectName("PrimaryButton")
         start_button.clicked.connect(self.start_daemon_send)
         layout.addWidget(start_button)
 
-        stop_button = QPushButton("停止守护发送")
+        stop_button = QPushButton("停止守护演练")
         stop_button.setObjectName("DangerButton")
         stop_button.clicked.connect(self.stop_daemon_send)
         layout.addWidget(stop_button)
@@ -245,12 +245,12 @@ class TaskCenterPage(ScrollPage):
     def start_daemon_send(self) -> None:
         task = self.daemon_send_task()
         if task is None:
-            self.show_result(ActionResult(False, "未找到 24 小时守护发送任务。"))
+            self.show_result(ActionResult(False, "未找到 24 小时守护演练任务。"))
             return
         answer = QMessageBox.question(
             self,
             "确认启动",
-            "这是 24 小时真实发送守护脚本，到点会发送邮件。关闭桌面 UI 后它也会继续运行。确认启动？",
+            "这是 24 小时 dry-run 守护演练脚本，到点只写入发送记录，不会真实发送邮件。关闭桌面 UI 后它也会继续运行。确认启动？",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -264,12 +264,12 @@ class TaskCenterPage(ScrollPage):
     def stop_daemon_send(self) -> None:
         task = self.daemon_send_task()
         if task is None:
-            self.show_result(ActionResult(False, "未找到 24 小时守护发送任务。"))
+            self.show_result(ActionResult(False, "未找到 24 小时守护演练任务。"))
             return
         answer = QMessageBox.question(
             self,
             "确认停止",
-            "确认停止 24 小时守护发送？停止后不会再自动发送定时报告。",
+            "确认停止 24 小时守护演练？停止后不会再自动执行定时演练。",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )

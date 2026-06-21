@@ -26,7 +26,8 @@ class DesktopTaskTests(unittest.TestCase):
         self.assertEqual(daemon.script_name, "auto_report_daemon.py")
         self.assertTrue(daemon.background)
         self.assertTrue(daemon.can_stop)
-        self.assertIn("--send", daemon.args)
+        self.assertEqual(daemon.name, "24小时守护演练")
+        self.assertNotIn("--send", daemon.args)
 
     def test_task_catalog_hides_report_send_and_data_update(self):
         tasks = task_catalog(Path("D:/AI期货数据工作台"))
@@ -114,6 +115,8 @@ class DesktopTaskTests(unittest.TestCase):
 
             self.assertTrue(result.ok)
             self.assertIn("12345", result.output)
+            self.assertIn("daemon.log", result.output)
+            self.assertNotIn(str(root), result.output)
             history = load_task_history(root)
             self.assertEqual(history[0].status, "已启动")
 
@@ -140,6 +143,8 @@ class DesktopTaskTests(unittest.TestCase):
             self.assertTrue(result.ok)
             self.assertFalse(called)
             self.assertIn("正在运行", result.message)
+            self.assertIn(str(Path(".desktop_runtime") / "auto_report_daemon_send.log"), result.output)
+            self.assertNotIn(str(root), result.output)
 
     def test_stop_background_task_uses_pid_file_and_records_result(self):
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -56,7 +56,7 @@ class ReportCenterPage(ScrollPage):
         self.layout.addWidget(
             make_title(
                 "报告中心",
-                "列出白盘和日报，支持打开 HTML/PDF、重新生成报告，以及确认后发送当前报告。",
+                "列出白盘和日报，支持打开 HTML/PDF、重新生成报告，以及 dry-run 发送演练。",
             )
         )
 
@@ -81,7 +81,7 @@ class ReportCenterPage(ScrollPage):
         generate.add(self._build_generate_controls(snapshot))
         top_layout.addWidget(generate)
 
-        send = Section("发送当前报告", "会真实发送邮件。点击后会再次弹窗确认，避免误发。")
+        send = Section("发送演练", "默认 dry-run，只写入发送记录，不会真实发送邮件。")
         send.add(self._build_send_controls())
         top_layout.addWidget(send)
         top_layout.addStretch(1)
@@ -192,7 +192,7 @@ class ReportCenterPage(ScrollPage):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        send_button = QPushButton("发送选中报告")
+        send_button = QPushButton("演练发送选中报告")
         send_button.setObjectName("PrimaryButton")
         send_button.clicked.connect(self.confirm_and_send_selected_report)
         layout.addWidget(send_button)
@@ -268,8 +268,8 @@ class ReportCenterPage(ScrollPage):
 
         answer = QMessageBox.question(
             self,
-            "确认发送",
-            f"确认发送 {report.trade_date} {report.label}？\n\n这会真实发送邮件；系统会自动允许重发当前报告。",
+            "确认发送演练",
+            f"确认 dry-run 演练 {report.trade_date} {report.label}？\n\n这会写入发送记录，不会真实发送邮件。",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -278,7 +278,7 @@ class ReportCenterPage(ScrollPage):
             return
 
         self.run_background(
-            "正在发送报告，请稍候...",
+            "正在执行发送演练，请稍候...",
             lambda: send_current_report(self.snapshot.project_root, report, resend=True),
         )
 

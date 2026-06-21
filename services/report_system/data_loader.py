@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pandas as pd
@@ -16,11 +17,11 @@ class FuturesDataLoader:
         return sqlite3.connect(self.db_path)
 
     def read_sql(self, sql, params=None):
-        with self.connect() as conn:
+        with closing(self.connect()) as conn:
             return pd.read_sql_query(sql, conn, params=params or {})
 
     def scalar(self, sql, params=None):
-        with self.connect() as conn:
+        with closing(self.connect()) as conn:
             row = conn.execute(sql, params or {}).fetchone()
             return row[0] if row else None
 

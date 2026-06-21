@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from datetime import datetime
 
 from config import DB_PATH
@@ -15,9 +16,9 @@ def record_task_run(
     output='',
     error='',
     started_at='',
-):
+    ):
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(DB_PATH) as conn:
+    with closing(sqlite3.connect(DB_PATH)) as conn:
         ensure_schema(conn)
         conn.execute(
             """

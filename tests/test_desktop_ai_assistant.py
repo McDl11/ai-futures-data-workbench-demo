@@ -490,7 +490,7 @@ class DesktopAiAssistantTests(unittest.TestCase):
             call.assert_not_called()
             self.assertIn("诊断：24小时守护未启动", answer.text)
             self.assertIn("原因：没有找到守护进程 PID 记录。", answer.text)
-            self.assertIn("建议：在任务中心启动 24 小时守护发送。", answer.text)
+            self.assertIn("建议：在任务中心启动 24 小时守护演练。", answer.text)
 
 
 if __name__ == "__main__":

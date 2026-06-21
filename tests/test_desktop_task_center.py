@@ -29,8 +29,8 @@ class DesktopTaskCenterPageTests(unittest.TestCase):
             buttons = [button.text() for button in page.findChildren(QPushButton)]
 
             self.assertIn("运行一次", buttons)
-            self.assertIn("启动守护发送", buttons)
-            self.assertIn("停止守护发送", buttons)
+            self.assertIn("启动守护演练", buttons)
+            self.assertIn("停止守护演练", buttons)
             self.assertNotIn("运行选中任务", buttons)
             self.assertNotIn("启动后台任务", buttons)
 

@@ -78,10 +78,10 @@ class DesktopReportTests(unittest.TestCase):
             "white",
             "--date",
             "20260616",
-            "--send",
             "--force",
             "--resend",
         ])
+        self.assertNotIn("--send", args)
 
     def test_build_send_args_includes_explicit_report_paths(self):
         selection = ReportSelection(

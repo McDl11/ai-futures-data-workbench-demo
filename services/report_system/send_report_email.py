@@ -6,6 +6,7 @@ import os
 import sqlite3
 import smtplib
 import time
+from contextlib import closing
 from datetime import datetime
 from email.message import EmailMessage
 from html import escape
@@ -41,7 +42,7 @@ def setup_logging():
 
 
 def load_email_env():
-    load_dotenv(BASE_DIR / '.env')
+    load_dotenv(BASE_DIR / '.env', override=True)
 
 
 def split_addresses(value):
@@ -86,7 +87,7 @@ def recipients_key(recipients, cc):
 
 
 def init_send_history():
-    with sqlite3.connect(DB_PATH) as conn:
+    with closing(sqlite3.connect(DB_PATH)) as conn:
         conn.execute(
             """
             create table if not exists report_send_history (
@@ -149,7 +150,7 @@ def init_send_history():
 
 def has_successful_send(trade_date, report_type, key):
     init_send_history()
-    with sqlite3.connect(DB_PATH) as conn:
+    with closing(sqlite3.connect(DB_PATH)) as conn:
         row = conn.execute(
             """
             select sent_at
@@ -168,7 +169,7 @@ def has_successful_send(trade_date, report_type, key):
 
 def has_successful_recipient_send(trade_date, report_type, recipient):
     init_send_history()
-    with sqlite3.connect(DB_PATH) as conn:
+    with closing(sqlite3.connect(DB_PATH)) as conn:
         row = conn.execute(
             """
             select sent_at
@@ -197,7 +198,7 @@ def record_send_history(
     error='',
 ):
     init_send_history()
-    with sqlite3.connect(DB_PATH) as conn:
+    with closing(sqlite3.connect(DB_PATH)) as conn:
         conn.execute(
             """
             insert into report_send_history (
@@ -235,7 +236,7 @@ def record_recipient_send_history(
     error='',
 ):
     init_send_history()
-    with sqlite3.connect(DB_PATH) as conn:
+    with closing(sqlite3.connect(DB_PATH)) as conn:
         conn.execute(
             """
             insert into report_recipient_send_history (

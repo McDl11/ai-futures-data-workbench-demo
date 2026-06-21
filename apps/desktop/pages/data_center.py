@@ -63,7 +63,7 @@ class DataCenterPage(ScrollPage):
         top_layout.setContentsMargins(0, 0, 0, 0)
         top_layout.setSpacing(13)
 
-        core = Section("核心表", database_detail(snapshot.database.path))
+        core = Section("核心表", database_detail(snapshot.database.path, snapshot.project_root))
         self.table = self._build_table(collect_core_table_statuses(snapshot.database.path))
         core.add(self.table)
         top_layout.addWidget(core)

@@ -98,7 +98,6 @@ def build_send_args(selection: ReportSelection, resend: bool = True) -> list[str
         _normalize_report_type(selection.report_type),
         "--date",
         selection.trade_date,
-        "--send",
         "--force",
     ]
     if selection.html_path is not None:
@@ -147,7 +146,7 @@ def send_current_report(
     result = run_and_record(
         project_root,
         task_type="mail_send",
-        task_name="发送当前报告",
+        task_name="发送演练",
         target_date=selection.trade_date,
         detail=selection.report_type,
         fn=lambda: runner(report_dir, report_dir / args[0], args=args[1:], timeout_seconds=300),

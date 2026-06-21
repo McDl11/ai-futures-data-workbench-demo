@@ -214,8 +214,16 @@ def find_recent_gap_range(
     return ordered[0], ordered[-1]
 
 
-def database_detail(db_path: Path) -> str:
+def database_detail(db_path: Path, project_root: Path | None = None) -> str:
     db_path = Path(db_path)
+    if project_root is not None:
+        display_path = _display_path(db_path, project_root)
+        if not db_path.exists():
+            return display_path
+        try:
+            return f"{display_path} · {format_size(db_path.stat().st_size)}"
+        except OSError:
+            return display_path
     if not db_path.exists():
         return str(db_path)
     try:
@@ -417,3 +425,10 @@ def _date_range_detail(start_date: str | None, end_date: str | None) -> str:
 
 def _quote_name(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
+
+
+def _display_path(path: Path, project_root: Path) -> str:
+    try:
+        return str(Path(path).relative_to(Path(project_root)))
+    except ValueError:
+        return str(path)

@@ -78,6 +78,19 @@ def display_date(value):
     return value
 
 
+def display_cell(value):
+    text = '' if value is None else str(value)
+    if not text:
+        return ''
+    path = Path(text)
+    if path.is_absolute():
+        try:
+            return path.relative_to(PROJECT_ROOT).as_posix()
+        except ValueError:
+            return path.name
+    return text
+
+
 def parse_qs(query):
     return {k: v[-1] if v else '' for k, v in urllib.parse.parse_qs(query).items()}
 
@@ -251,7 +264,7 @@ def table_html(rows, columns=None, empty='暂无数据'):
     head = ''.join(f'<th>{e(col)}</th>' for col in columns)
     body_rows = []
     for row in rows:
-        body_rows.append('<tr>' + ''.join(f'<td>{e(row[col])}</td>' for col in columns) + '</tr>')
+        body_rows.append('<tr>' + ''.join(f'<td>{e(display_cell(row[col]))}</td>' for col in columns) + '</tr>')
     return f'<div class="table-wrap"><table><thead><tr>{head}</tr></thead><tbody>{"".join(body_rows)}</tbody></table></div>'
 
 

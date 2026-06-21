@@ -16,25 +16,25 @@ class SystemCenterPage(ScrollPage):
         )
 
         data = Section("数据状态")
-        data.add(status_row("主数据库", snapshot.database))
-        data.add(status_row("下载日志目录", snapshot.downloader_logs_dir))
+        data.add(status_row("主数据库", snapshot.database, snapshot.project_root))
+        data.add(status_row("下载日志目录", snapshot.downloader_logs_dir, snapshot.project_root))
         self.layout.addWidget(data)
 
         reports = Section("报告目录")
-        reports.add(status_row("报告输出", snapshot.reports_dir))
+        reports.add(status_row("报告输出", snapshot.reports_dir, snapshot.project_root))
         self.layout.addWidget(reports)
 
         logs = Section("日志目录")
-        logs.add(status_row("报告系统日志", snapshot.report_logs_dir))
-        logs.add(status_row("下载系统日志", snapshot.downloader_logs_dir))
+        logs.add(status_row("报告系统日志", snapshot.report_logs_dir, snapshot.project_root))
+        logs.add(status_row("下载系统日志", snapshot.downloader_logs_dir, snapshot.project_root))
         self.layout.addWidget(logs)
 
         scripts = Section("关键脚本")
         for script in snapshot.script_files:
-            scripts.add(status_row(script.path.name, script))
+            scripts.add(status_row(script.path.name, script, snapshot.project_root))
         self.layout.addWidget(scripts)
 
         configs = Section("配置与依赖文件状态")
         for config in snapshot.config_files:
-            configs.add(status_row(config_status_label(config.path, snapshot.project_root), config))
+            configs.add(status_row(config_status_label(config.path, snapshot.project_root), config, snapshot.project_root))
         self.layout.addWidget(configs)
